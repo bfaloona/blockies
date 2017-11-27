@@ -1,5 +1,4 @@
 import pygame
-import pygame.freetype
 from blockies import Blockies
 import const
 import copy
@@ -12,15 +11,17 @@ pygame.init()
 screen = pygame.display.set_mode((const.SCREEN_SIZE, const.SCREEN_SIZE), pygame.FULLSCREEN)
 pygame.display.set_caption("Blockies!!!")
 clock = pygame.time.Clock()
-
-huge_font = pygame.font.Font("/System/Library/Fonts/MarkerFelt.ttc", 128)
-small_font = pygame.font.Font("/System/Library/Fonts/MarkerFelt.ttc", 44)
-score_font = pygame.font.Font("/System/Library/Fonts/MarkerFelt.ttc", 86)
+huge_font = pygame.font.Font('agencyb.ttf', 128)
+small_font = pygame.font.Font('agencyb.ttf', 54)
+winner_font = pygame.font.Font('agencyb.ttf', 84)
+score_font = pygame.font.Font('agencyb.ttf', 72)
 
 
 # HELPERS
 def set_columns(num_players):
-    if num_players == 2:
+    if num_players == 1:
+        const.SQ_COLUMNS = 6
+    elif num_players == 2:
         const.SQ_COLUMNS = 8
     elif num_players == 3:
         const.SQ_COLUMNS = 10
@@ -49,7 +50,7 @@ def mouse_is_on_screen():
 
 
 def set_final_scores():
-    scores = []
+    Blockies.final_scores = []
     total_points = 0
     for piece in grid.available_pieces:
         total_points += len(piece.squares)
@@ -63,10 +64,13 @@ def set_final_scores():
             score += len(piece.squares)
         player_scores[player_colors.pop()] = total_points - score
 
+    winner = False
     for color, score in sorted(player_scores.items(), key=operator.itemgetter(1), reverse=True):
-        scores.append(color + ': ' + str(score))
-    scores_text = '  '.join(scores)
-    Blockies.final_scores = small_font.render(scores_text, True, (128, 128, 128))
+        if not winner:
+            Blockies.final_scores.append(winner_font.render(color.upper() + ': ' + str(score), True, (50, 50, 50)))
+            winner = True
+        else:
+            Blockies.final_scores.append(score_font.render(color + ': ' + str(score), True, (50, 50, 50)))
 
 
 def turn_swap():
@@ -125,14 +129,17 @@ ignore_illegal_square = False
 Blockies.final_scores = None
 started = False
 begin_title = huge_font.render("Blockies!", True, const.WHITE)
-begin_prompt = small_font.render("how many players? (2 to 4)", True, const.WHITE)
+begin_prompt = small_font.render("how many players? (1 to 4)", True, const.WHITE)
 
 while not started:
     for event in pygame.event.get():    # User did something
         if event.type == pygame.QUIT:   # User clicked close
             quit(0)
         elif event.type == pygame.KEYDOWN:
-            if pygame.key.get_pressed()[pygame.K_2]:
+            if pygame.key.get_pressed()[pygame.K_1]:
+                Blockies.num_players = 1
+                started = True
+            elif pygame.key.get_pressed()[pygame.K_2]:
                 Blockies.num_players = 2
                 started = True
             elif pygame.key.get_pressed()[pygame.K_3]:
@@ -202,40 +209,45 @@ while not done:
                 # grid.hide_mouse_square()
 
     screen.fill((255, 255, 255))
-    if Blockies.final_scores:
-        score_title = small_font.render('FINAL SCORE', True, (128, 128, 128))
-        total_height = score_title.get_height() + Blockies.final_scores.get_height()
+    for col_line_num in range(const.SQ_COLUMNS + 1):
+        pygame.draw.line(screen,
+                         const.GRID_LINE_COLOR,
+                         ((col_line_num) * const.SQ_SIZE, 0),
+                         ((col_line_num) * const.SQ_SIZE, const.SCREEN_SIZE))
+
+    for row_line_num in range(const.SQ_COLUMNS + 1):
+        pygame.draw.line(screen,
+                         const.GRID_LINE_COLOR,
+                         (0, row_line_num * const.SQ_SIZE),
+                         (const.SCREEN_SIZE, row_line_num * const.SQ_SIZE))
+
+    for col_sq in range(const.SQ_COLUMNS):
+        for row_sq in range(const.SQ_COLUMNS):
+            if grid._squares[col_sq][row_sq] is not None:
+                draw_square((col_sq, row_sq))
+
+    if not Blockies.final_scores:
+        if mouse_is_on_screen() and not grid.mouse_in_square(pygame.mouse.get_pos(), new_square):
+            draw_piece(grid.active_piece)
+    else:
+        overlay = pygame.Surface((const.SCREEN_SIZE, const.SCREEN_SIZE))  # the size of your rect
+        overlay.set_alpha(188)              # alpha level
+        overlay.fill((255, 255, 255))       # this fills the entire surface
+        screen.blit(overlay, (0, 0))        # (0,0) are the top-left coordinates
+        score_title = huge_font.render('FINAL SCORE', True, (50, 50, 50))
+        total_height = score_title.get_height() + Blockies.final_scores[0].get_height()
 
         screen.blit(score_title,
             ((const.SCREEN_SIZE / 2) - score_title.get_width() // 2,
-            (const.SCREEN_SIZE / 2) - total_height // 2))
-        pygame.display.flip()  # Update display
-        pygame.time.wait(500)
-        screen.blit(Blockies.final_scores,
-            ((const.SCREEN_SIZE / 2) - Blockies.final_scores.get_width() // 2,
-            (const.SCREEN_SIZE / 2) + 60 - total_height // 2))
-        pygame.display.flip()
-        pygame.time.wait(2000)
-    else:
-        for col_line_num in range(const.SQ_COLUMNS + 1):
-            pygame.draw.line(screen,
-                             const.GRID_LINE_COLOR,
-                             ((col_line_num) * const.SQ_SIZE, 0),
-                             ((col_line_num) * const.SQ_SIZE, const.SCREEN_SIZE))
+            (const.SCREEN_SIZE / 2) - 100 - total_height // 2))
 
-        for row_line_num in range(const.SQ_COLUMNS + 1):
-            pygame.draw.line(screen,
-                             const.GRID_LINE_COLOR,
-                             (0, row_line_num * const.SQ_SIZE),
-                             (const.SCREEN_SIZE, row_line_num * const.SQ_SIZE))
+        score_y = (const.SCREEN_SIZE / 2) + 60 - total_height // 2
 
-        for col_sq in range(const.SQ_COLUMNS):
-            for row_sq in range(const.SQ_COLUMNS):
-                if grid._squares[col_sq][row_sq] is not None:
-                    draw_square((col_sq, row_sq))
-
-        if mouse_is_on_screen() and not grid.mouse_in_square(pygame.mouse.get_pos(), new_square):
-            draw_piece(grid.active_piece)
+        for score in Blockies.final_scores:
+            screen.blit(score, (
+                (const.SCREEN_SIZE / 2) - Blockies.final_scores[0].get_width() // 2,
+                score_y))
+            score_y += (Blockies.final_scores[-1].get_height() + 20)
 
     pygame.display.flip()               # Update display
 
