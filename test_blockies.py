@@ -8,13 +8,8 @@ const.SQ_COLUMNS = 10
 Blockies.num_players = 2
 Blockies.players = const.PIECE_COLORS[:Blockies.num_players]
 
-class TestBlockiesPiece(unittest.TestCase):
 
-    def test_piece2_square_from_pos(self):
-        expected_square = (0, 0)
-        piece = Blockies.Piece('square', 1, 1, (0, 0), (0, 0, 0))
-        for point in piece.points:
-            self.assertEqual(expected_square, Blockies.Grid.square_from_pos(None, point))
+class TestBlockiesPiece(unittest.TestCase):
 
     def test_piece2_construct_square_2x(self):
         piece = Blockies.Piece('square', 2, 2, (0, 0), (100, 100, 100))
@@ -41,7 +36,31 @@ class TestBlockiesPiece(unittest.TestCase):
     def test_find_corner_coordinates(self):
         piece = Blockies.Piece('rectangle', 3, 2, (2, 2), const.WHITE)
         expected_squares = [(2, 2), (2, 3), (4, 2), (4, 3)]
-        self.assertEqual(piece.find_corner_coordinates(piece), expected_squares)
+        self.assertEqual(piece.find_corner_coordinates(), expected_squares)
+
+    def test_rotate_2_1_rect_clockwise(self):
+        piece = Blockies.Piece('rectangle', 2, 1, (0, 0), const.WHITE)
+        initial_squares = [(0, 0), (1, 0)]
+        expected_squares = [(0, 0), (0, 1)]
+        self.assertEqual(piece.squares, initial_squares)
+        piece.rotate_clockwise()
+        self.assertEqual(set(piece.squares), set(expected_squares), 'rotated 2x1 rect does not occupy expected squares')
+
+    def test_rotate_1_2_rect_clockwise(self):
+        piece = Blockies.Piece('rectangle', 1, 2, (0, 0), const.WHITE)
+        initial_squares = [(0, 0), (0, 1)]
+        expected_squares = [(0, 0), (1, 0)]
+        self.assertEqual(piece.squares, initial_squares)
+        piece.rotate_clockwise()
+        self.assertEqual(piece.squares, expected_squares, 'rotated 1x2 rect does not occupy expected squares')
+
+    def test_rotate_3_2_rect_clockwise(self):
+        piece = Blockies.Piece('rectangle', 3, 2, (0, 0), const.WHITE)
+        initial_squares = [(0, 0), (1, 0), (2, 0), (0, 1), (1, 1), (2, 1)]
+        expected_squares = [(0, 0), (1, 0), (0, 1), (1, 1), (0, 2), (1, 2)]
+        self.assertEqual(piece.squares, initial_squares)
+        piece.rotate_clockwise()
+        self.assertEqual(set(piece.squares), set(expected_squares), 'rotated 3x2 rect does not occupy expected squares')
 
 
 class TestBlockiesGrid(unittest.TestCase):

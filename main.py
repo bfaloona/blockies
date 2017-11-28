@@ -20,13 +20,13 @@ score_font = pygame.font.Font('agencyb.ttf', 72)
 # HELPERS
 def set_columns(num_players):
     if num_players == 1:
-        const.SQ_COLUMNS = 6
+        const.SQ_COLUMNS = 7
     elif num_players == 2:
-        const.SQ_COLUMNS = 8
-    elif num_players == 3:
         const.SQ_COLUMNS = 10
-    elif num_players == 4:
+    elif num_players == 3:
         const.SQ_COLUMNS = 12
+    elif num_players == 4:
+        const.SQ_COLUMNS = 14
     const.SQ_SIZE = int(const.SCREEN_SIZE / const.SQ_COLUMNS)
 
 
@@ -181,6 +181,8 @@ while not done:
                 grid.active_piece = grid.next_available_piece()
             elif pygame.key.get_pressed()[pygame.K_DOWN]:
                 grid.active_piece = grid.previous_available_piece()
+            elif pygame.key.get_pressed()[pygame.K_RIGHT]:
+                grid.active_piece.rotate_clockwise()
             elif pygame.key.get_pressed()[pygame.K_q]:
                 quit(0)
             grid.active_piece.set_color(Blockies.players_lt_colors[Blockies.player_index])

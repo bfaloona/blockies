@@ -16,9 +16,9 @@ class Blockies:
             self.root_square = root_square
             self.x_squares = x_squares
             self.y_squares = y_squares
-            self.points = []
             self.squares = []
             self.matrix = [[]]
+            self.points = []
             self.corner_squares = []
             self.is_legal = False
             if not self.shape in ['square', 'rectangle']:
@@ -84,9 +84,9 @@ class Blockies:
                         square = (x, y)
                         new_squares.append(square)
             self.squares = new_squares
-            self.corner_squares = self.find_corner_coordinates(self)
+            self.corner_squares = self.find_corner_coordinates()
 
-        def find_corner_coordinates(self, piece):
+        def find_corner_coordinates(self):
             root_x = self.root_square[0]
             root_y = self.root_square[1]
 
@@ -96,6 +96,16 @@ class Blockies:
 
             return [self.root_square, bottom_left, top_right, bottom_right]
 
+        def rotate_clockwise(self):
+            # new_squares = []
+            # for square in self.squares:
+            #     x, y = square
+            #     new_squares.append((y, x))
+            # self.squares = new_squares
+            self.x_squares, self.y_squares = self.y_squares, self.x_squares
+            self.hydrate()
+            pass
+
     class Grid:
 
         def __init__(self):
@@ -103,22 +113,12 @@ class Blockies:
             self.available_pieces = [
                 Blockies.Piece('square', 1, 1, (0, 0), const.SQ_COLOR_ILLEGAL),
                 Blockies.Piece('rectangle', 2, 1, (0, 0), const.SQ_COLOR_ILLEGAL),
-                Blockies.Piece('rectangle', 1, 2, (0, 0), const.SQ_COLOR_ILLEGAL),
                 Blockies.Piece('square', 2, 2, (0, 0), const.SQ_COLOR_ILLEGAL),
                 Blockies.Piece('rectangle', 3, 1, (0, 0), const.SQ_COLOR_ILLEGAL),
-                Blockies.Piece('rectangle', 1, 3, (0, 0), const.SQ_COLOR_ILLEGAL),
-                # Blockies.Piece('square', 3, 2, (0, 0), const.SQ_COLOR_ILLEGAL),
-                # Blockies.Piece('square', 2, 3, (0, 0), const.SQ_COLOR_ILLEGAL),
-                # Blockies.Piece('square', 3, 3, (0, 0), const.SQ_COLOR_ILLEGAL),
-                # Blockies.Piece('square', 4, 3, (0, 0), const.SQ_COLOR_ILLEGAL),
-                # Blockies.Piece('square', 3, 4, (0, 0), const.SQ_COLOR_ILLEGAL),
+                Blockies.Piece('square', 3, 2, (0, 0), const.SQ_COLOR_ILLEGAL),
                 Blockies.Piece('rectangle', 4, 1, (0, 0), const.SQ_COLOR_ILLEGAL),
-                Blockies.Piece('rectangle', 1, 4, (0, 0), const.SQ_COLOR_ILLEGAL),
-                # Blockies.Piece('square', 4, 4, (0, 0), const.SQ_COLOR_ILLEGAL),
-                # Blockies.Piece('rectangle', 5, 1, (0, 0), const.SQ_COLOR_ILLEGAL),
-                # Blockies.Piece('rectangle', 1, 5, (0, 0), const.SQ_COLOR_ILLEGAL),
-                # Blockies.Piece('rectangle', 6, 1, (0, 0), const.SQ_COLOR_ILLEGAL),
-                # Blockies.Piece('rectangle', 1, 6, (0, 0), const.SQ_COLOR_ILLEGAL),
+                Blockies.Piece('rectangle', 5, 1, (0, 0), const.SQ_COLOR_ILLEGAL),
+                Blockies.Piece('rectangle', 6, 1, (0, 0), const.SQ_COLOR_ILLEGAL),
             ]
             self.active_piece_index = 0
 
