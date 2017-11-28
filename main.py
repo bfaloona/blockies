@@ -12,7 +12,7 @@ screen = pygame.display.set_mode((const.SCREEN_SIZE, const.SCREEN_SIZE), pygame.
 pygame.display.set_caption("Blockies!!!")
 clock = pygame.time.Clock()
 huge_font = pygame.font.Font('agencyb.ttf', 128)
-small_font = pygame.font.Font('agencyb.ttf', 54)
+small_font = pygame.font.Font('agencyb.ttf', 48)
 winner_font = pygame.font.Font('agencyb.ttf', 84)
 score_font = pygame.font.Font('agencyb.ttf', 72)
 
@@ -129,7 +129,8 @@ ignore_illegal_square = False
 Blockies.final_scores = None
 started = False
 begin_title = huge_font.render("Blockies!", True, const.WHITE)
-begin_prompt = small_font.render("how many players? (1 to 4)", True, const.WHITE)
+begin_prompt = small_font.render("press 1, 2, 3 or 4 players", True, const.WHITE)
+quit_prompt = small_font.render("press q to quit", True, const.WHITE)
 
 while not started:
     for event in pygame.event.get():    # User did something
@@ -168,7 +169,17 @@ while not started:
 
     screen.blit(begin_prompt,
                 ((const.SCREEN_SIZE/2) - begin_prompt.get_width() // 2,
+                 (const.SCREEN_SIZE/2) + 25 - total_height // 2))
+
+    screen.blit(quit_prompt,
+                ((const.SCREEN_SIZE/2) - quit_prompt.get_width() // 2,
                  (const.SCREEN_SIZE/2) + 100 - total_height // 2))
+
+    pygame.draw.polygon(screen, const.LT_BLUE, [[0, 0], [0, 75], [75, 75], [75, 300], [150, 300], [150, 0]])
+    pygame.draw.polygon(screen, const.LT_GREEN, [[0, 425], [0, 575], [150, 575], [150, 650], [225, 650], [225, 500], [75, 500], [75, 425]])
+    pygame.draw.polygon(screen, const.LT_RED, [[725, 100], [725, 175], [800, 175], [800, 100]])
+    pygame.draw.polygon(screen, const.LT_YELLOW, [[650, 300], [650, 525], [725, 525], [725, 450], [800, 450], [800, 375], [725, 375], [725, 300]])
+
     pygame.display.flip()               # Update display
     clock.tick(60)                      # Limit to 30 frames per second
 
