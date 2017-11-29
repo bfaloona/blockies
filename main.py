@@ -8,7 +8,7 @@ white = pygame.Color('White')
 
 # INITIALIZATION
 pygame.init()
-screen = pygame.display.set_mode((const.SCREEN_SIZE, const.SCREEN_SIZE), pygame.FULLSCREEN)
+screen = pygame.display.set_mode((const.SCREEN_SIZE, const.SCREEN_SIZE)) #, pygame.FULLSCREEN)
 pygame.display.set_caption("Blockies!!!")
 clock = pygame.time.Clock()
 huge_font = pygame.font.Font('agencyb.ttf', 128)
@@ -190,14 +190,15 @@ while not done:
         elif event.type == pygame.KEYDOWN:
             if pygame.key.get_pressed()[pygame.K_UP]:
                 grid.active_piece = grid.next_available_piece()
+                grid.active_piece.move_to(grid.square_from_pos(pygame.mouse.get_pos()))
             elif pygame.key.get_pressed()[pygame.K_DOWN]:
                 grid.active_piece = grid.previous_available_piece()
+                grid.active_piece.move_to(grid.square_from_pos(pygame.mouse.get_pos()))
             elif pygame.key.get_pressed()[pygame.K_RIGHT]:
                 grid.active_piece.rotate_clockwise()
             elif pygame.key.get_pressed()[pygame.K_q]:
                 quit(0)
             grid.active_piece.set_color(Blockies.players_lt_colors[Blockies.player_index])
-            grid.active_piece.set_root_square(grid.square_from_pos(pygame.mouse.get_pos()))
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
             grid.update_active_piece(event.pos)
@@ -211,7 +212,7 @@ while not done:
                 # turn_swap succeeded
                 grid.update_active_piece(event.pos)
                 new_square = clicked_square
-                grid.display()
+                # grid._display()
         elif event.type == pygame.MOUSEMOTION:
             if mouse_is_on_screen():
                 if not grid.mouse_in_square(event.pos, new_square):

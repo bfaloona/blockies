@@ -1,4 +1,5 @@
 import const
+import operator
 
 
 class Blockies:
@@ -16,15 +17,19 @@ class Blockies:
             self.root_square = root_square
             self.x_squares = x_squares
             self.y_squares = y_squares
-            self.squares = []
-            self.matrix = [[]]
             self.points = []
+            self.matrix = [[]]
+            self.squares = []
             self.corner_squares = []
             self.is_legal = False
-            if not self.shape in ['square', 'rectangle']:
+            if self.is_rectangle():
+                self._initialize_matrix_rect()
+                if self.root_square and isinstance(self.root_square, (tuple, list)) and len(self.root_square) == 2:
+                    self.hydrate()
+                else:
+                    raise ValueError('`root_square` parameter must be coordinate (tuple or list)')
+            else:
                 raise ValueError('Only type `square` is currently supported')
-            if self.root_square:
-                self.hydrate()
 
         def set_color(self, color):
             self.color = color
@@ -32,49 +37,96 @@ class Blockies:
         def set_color_current(self):
             self.color = Blockies.players[Blockies.player_index]
 
-        def set_root_square(self, square):
-            self.root_square = square
+        def move_to(self, new_root_square):
+            self.root_square = new_root_square
             self.hydrate()
 
-        def _set_rect_points(self, x_squares, y_squares):
+        def hydrate(self):
+            if self.is_rectangle():
+                self._populate_rect_points()
+            else:
+                raise RuntimeError('Not implemented')
+            self._populate_squares()
+
+        def is_rectangle(self):
+            return True if self.shape in ['square', 'rectangle'] else False
+
+        def lowest_bounding_square(self, squares):
+            sorted_by_x = sorted(squares[:], key=operator.itemgetter(0))
+            sorted_by_y = sorted(squares[:], key=operator.itemgetter(1))
+            return sorted_by_x[0][0], sorted_by_y[0][1]
+
+        def rotate_clockwise(self):
+            if self.is_rectangle():
+                self.x_squares, self.y_squares = self.y_squares, self.x_squares
+                new_squares = []
+                for square in self.squares:
+                    x, y = square
+                    new_x = self.root_square[1] - y + self.root_square[0]
+                    new_y = x - self.root_square[0] + self.root_square[1]
+                    new_squares.append((new_x, new_y))
+                self.squares = self._shift_squares_positive(new_squares)
+                self.root_square = self.lowest_bounding_square(self.squares)
+                self.corner_squares = self._get_corners()
+                self._populate_rect_points()
+                self._repopulate_matrix()
+            else:
+                raise RuntimeError('Not implemented')
+
+        def _shift_squares_positive(self, squares):
+            squares_copy = squares
+            # find lowest square of bounding rectangle
+            lowest_x, lowest_y = self.lowest_bounding_square(squares_copy)
+            # if square includes negative numbers
+            if lowest_x < 0:
+                # adjust x squares to remove negative values
+                squares_copy = [(x - lowest_x, y) for (x, y) in squares_copy]
+            if lowest_y < 0:
+                # adjust y squares to remove negative values
+                squares_copy = [(y, y - lowest_y) for (x, y) in squares_copy]
+            return squares_copy
+
+        def _populate_rect_points(self):
             p1 = (
                 int((self.root_square[0] * const.SQ_SIZE) + const.SQ_PADDING),
                 int((self.root_square[1] * const.SQ_SIZE) + const.SQ_PADDING),
             )
             p2 = (
                 int((self.root_square[0] * const.SQ_SIZE) + const.SQ_PADDING),
-                int((self.root_square[1] * const.SQ_SIZE) + (y_squares * const.SQ_SIZE) - const.SQ_PADDING),
+                int((self.root_square[1] * const.SQ_SIZE) + (self.y_squares * const.SQ_SIZE) - const.SQ_PADDING),
             )
             p3 = (
-                int((self.root_square[0] * const.SQ_SIZE) + (x_squares * const.SQ_SIZE) - const.SQ_PADDING),
-                int((self.root_square[1] * const.SQ_SIZE) + (y_squares * const.SQ_SIZE) - const.SQ_PADDING),
+                int((self.root_square[0] * const.SQ_SIZE) + (self.x_squares * const.SQ_SIZE) - const.SQ_PADDING),
+                int((self.root_square[1] * const.SQ_SIZE) + (self.y_squares * const.SQ_SIZE) - const.SQ_PADDING),
             )
             p4 = (
-                int((self.root_square[0] * const.SQ_SIZE) + (x_squares * const.SQ_SIZE) - const.SQ_PADDING),
+                int((self.root_square[0] * const.SQ_SIZE) + (self.x_squares * const.SQ_SIZE) - const.SQ_PADDING),
                 int((self.root_square[1] * const.SQ_SIZE) + const.SQ_PADDING),
             )
             self.points = [p1, p2, p3, p4]
 
-        def hydrate(self):
+        def _initialize_matrix_rect(self):
             self.matrix = [[]]
             for y in range(self.y_squares):
                 for x in range(self.x_squares):
                     if len(self.matrix) < x + 1:
                         self.matrix.append([])
                     self.matrix[x].append('*')
-            self._set_rect_points(self.x_squares, self.y_squares)
-            self._find_squares_taken()
 
-        def display(self):
-            print('   0  1')
-            for row_num in range(len(self.matrix[0])):
-                row = '{}: '.format(row_num)
-                for col_num in range(len(self.matrix)):
-                    row += ('*  ' if self.matrix[col_num][row_num] is not None else '   ')
-                print('{}'.format(row))
-            print('\n')
+        def _repopulate_matrix(self):
+            # Use squares to populate matrix
+            # ==============================
+            # for each square in bounding rectangle
+            # populate matrix with * if square is populated
+            self.matrix = [[]]
+            for y in range(self.y_squares):
+                for x in range(self.x_squares):
+                    if len(self.matrix) < x + 1:
+                        self.matrix.append([])
+                    if (self.root_square[0] + x, self.root_square[1] + y) in self.squares:
+                        self.matrix[x].append('*')
 
-        def _find_squares_taken(self):
+        def _populate_squares(self):
             new_squares = []
             for row_num in range(len(self.matrix[0])):
                 for col_num in range(len(self.matrix)):
@@ -84,27 +136,33 @@ class Blockies:
                         square = (x, y)
                         new_squares.append(square)
             self.squares = new_squares
-            self.corner_squares = self.find_corner_coordinates()
+            self.corner_squares = self._get_corners()
 
-        def find_corner_coordinates(self):
+        def _get_corners(self):
+            if self.is_rectangle():
+                return self._get_corners_rectangle()
+            else:
+                return self._get_corners_polygon()
+
+        def _get_corners_polygon(self):
+            raise RuntimeError('Not Implemented')
+
+        def _get_corners_rectangle(self):
             root_x = self.root_square[0]
             root_y = self.root_square[1]
+            bottom_left = (root_x, self.y_squares + root_y - 1)
+            top_right = (self.x_squares + root_x - 1, root_y)
+            bottom_right = (self.x_squares + root_x - 1, self.y_squares + root_y - 1)
+            return [self.root_square, bottom_left, bottom_right, top_right]
 
-            bottom_left = (root_x, len(self.matrix[0]) + root_y - 1)
-            top_right = (len(self.matrix) + root_x - 1, root_y)
-            bottom_right = (len(self.matrix) + root_x - 1, len(self.matrix[0]) + root_y - 1)
-
-            return [self.root_square, bottom_left, top_right, bottom_right]
-
-        def rotate_clockwise(self):
-            # new_squares = []
-            # for square in self.squares:
-            #     x, y = square
-            #     new_squares.append((y, x))
-            # self.squares = new_squares
-            self.x_squares, self.y_squares = self.y_squares, self.x_squares
-            self.hydrate()
-            pass
+        def _display(self):
+            print('   0  1')
+            for row_num in range(len(self.matrix[0])):
+                row = '{}: '.format(row_num)
+                for col_num in range(len(self.matrix)):
+                    row += ('*  ' if self.matrix[col_num][row_num] is not None else '   ')
+                print('{}'.format(row))
+            print('\n')
 
     class Grid:
 
@@ -151,7 +209,7 @@ class Blockies:
                         function(col, row, *params)
 
         def set_square(self, square, piece):
-            piece.set_root_square(square)
+            piece.move_to(square)
             for col_num, row_num in piece.squares:
                 # print('Set square: [{}][{}] to {}'.format(col_num, row_num, piece.color))
                 self._squares[col_num][row_num] = piece.color
@@ -251,7 +309,7 @@ class Blockies:
                     # FOR EACH const.SQUARE DOWN
                     for y in range(const.SQ_COLUMNS):
                         # CHECK IF MOVE IS LEGAL
-                        piece.set_root_square((x, y))
+                        piece.move_to((x, y))
                         if self.is_legal_position(piece):
                             return True
             # PLAYER CAN'T MOVE
@@ -276,14 +334,14 @@ class Blockies:
 
         def update_active_piece(self, pos):
             new_square = self.square_from_pos(pos)
-            self.active_piece.set_root_square(new_square)
+            self.active_piece.move_to(new_square)
             if not self.is_legal_position(self.active_piece):
                 color = const.SQ_COLOR_ILLEGAL
             else:
                 color = Blockies.players_lt_colors[Blockies.player_index]
             self.active_piece.set_color(color)
 
-        def display(self):
+        def _display(self):
             col_header = ' ' * (len(str(const.SQ_COLUMNS)))
             for i in range(const.SQ_COLUMNS):
                 col_header += ' {}{}'.format(' ' * (3 - len(str(const.SQ_COLUMNS))), i)

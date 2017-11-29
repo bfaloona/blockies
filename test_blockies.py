@@ -24,41 +24,40 @@ class TestBlockiesPiece(unittest.TestCase):
 
     def test_piece2_update_square_1x(self):
         piece = Blockies.Piece('square', 1, 1, (0, 0), const.WHITE)
-        piece.set_root_square((2, 2))
+        piece.move_to((2, 2))
         self.assertEqual(piece.squares, [(2, 2)])
 
     def test_piece2_squares_taken(self):
-        piece = Blockies.Piece('square', 2, 2, (1, 2), (100, 100, 100))
+        piece = Blockies.Piece('square', 2, 2, (1, 2), const.WHITE)
         expected_squares = [(1, 2), (2, 2), (1, 3), (2, 3)]
-        for square in expected_squares:
-            self.assertTrue(square in piece.squares)
+        self.assertEqual(set(piece.squares), set(expected_squares))
 
     def test_find_corner_coordinates(self):
         piece = Blockies.Piece('rectangle', 3, 2, (2, 2), const.WHITE)
         expected_squares = [(2, 2), (2, 3), (4, 2), (4, 3)]
-        self.assertEqual(piece.find_corner_coordinates(), expected_squares)
+        self.assertEqual(set(piece._get_corners_rectangle()), set(expected_squares))
 
     def test_rotate_2_1_rect_clockwise(self):
-        piece = Blockies.Piece('rectangle', 2, 1, (0, 0), const.WHITE)
-        initial_squares = [(0, 0), (1, 0)]
-        expected_squares = [(0, 0), (0, 1)]
-        self.assertEqual(piece.squares, initial_squares)
+        piece = Blockies.Piece('rectangle', 2, 1, (2, 4), const.WHITE)
+        initial_squares = [(2, 4), (3, 4)]
+        expected_squares = [(2, 4), (2, 5)]
+        self.assertEqual(set(piece.squares), set(initial_squares))
         piece.rotate_clockwise()
         self.assertEqual(set(piece.squares), set(expected_squares), 'rotated 2x1 rect does not occupy expected squares')
 
     def test_rotate_1_2_rect_clockwise(self):
-        piece = Blockies.Piece('rectangle', 1, 2, (0, 0), const.WHITE)
-        initial_squares = [(0, 0), (0, 1)]
-        expected_squares = [(0, 0), (1, 0)]
-        self.assertEqual(piece.squares, initial_squares)
+        piece = Blockies.Piece('rectangle', 1, 2, (3, 6), const.WHITE)
+        initial_squares = [(3, 6), (3, 7)]
+        expected_squares = [(2, 6), (3, 6)]
+        self.assertEqual(set(piece.squares), set(initial_squares))
         piece.rotate_clockwise()
-        self.assertEqual(piece.squares, expected_squares, 'rotated 1x2 rect does not occupy expected squares')
+        self.assertEqual(set(piece.squares), set(expected_squares), 'rotated 1x2 rect does not occupy expected squares')
 
     def test_rotate_3_2_rect_clockwise(self):
-        piece = Blockies.Piece('rectangle', 3, 2, (0, 0), const.WHITE)
-        initial_squares = [(0, 0), (1, 0), (2, 0), (0, 1), (1, 1), (2, 1)]
-        expected_squares = [(0, 0), (1, 0), (0, 1), (1, 1), (0, 2), (1, 2)]
-        self.assertEqual(piece.squares, initial_squares)
+        piece = Blockies.Piece('rectangle', 3, 2, (2, 2), const.WHITE)
+        initial_squares = [(2, 2), (3, 2), (4, 2), (2, 3), (3, 3), (4, 3)]
+        expected_squares = [(1, 2), (2, 2), (1, 3), (2, 3), (1, 4), (2, 4)]
+        self.assertEqual(set(piece.squares), set(initial_squares))
         piece.rotate_clockwise()
         self.assertEqual(set(piece.squares), set(expected_squares), 'rotated 3x2 rect does not occupy expected squares')
 
@@ -198,25 +197,8 @@ class TestBlockiesGrid(unittest.TestCase):
     def test_grid_print(self):
         grid = Blockies.Grid()
         from pprint import pprint
-        pprint(grid.display())
+        pprint(grid._display())
 
-
-# class TestBlockiesPiece(unittest.TestCase):
-#
-#     def test_construct_square(self):
-#         square = Blockies.Piece('square', 4)
-#         print(square.matrix)
-#         self.assertEqual(len(square.matrix), 2)
-#         self.assertEqual(len(square.matrix[0]), 2)
-#         self.assertEqual(len(square.matrix[1]), 2)
-#
-#     def test_down_nodes(self):
-#         square = Blockies.Piece('square', 4)
-#         self.assertEqual(len(square._down_nodes(square.root_node)), 2)
-#
-#     def test_right_nodes(self):
-#         square = Blockies.Piece('square', 4)
-#         self.assertEqual(len(square._right_nodes(square.root_node)), 2)
 
 
 if __name__ == '__main__':
