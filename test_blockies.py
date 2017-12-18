@@ -55,13 +55,21 @@ class TestBlockiesPiece(unittest.TestCase):
         expected_squares = [(2, 2), (2, 3), (4, 2), (4, 3)]
         self.assertEqual(set(piece._get_corners_rectangle()), set(expected_squares))
 
-    def test_rotate_2_1_rect_clockwise(self):
+    def test_rotate_2_1_squares_clockwise(self):
         piece = Blockies.Piece('rectangle', 2, 1, (2, 4), const.WHITE)
         initial_squares = [(2, 4), (3, 4)]
         expected_squares = [(2, 4), (2, 5)]
         self.assertEqual(set(piece.squares), set(initial_squares))
         piece.rotate_clockwise()
         self.assertEqual(set(piece.squares), set(expected_squares), 'rotated 2x1 rect does not occupy expected squares')
+
+    def test_rotate_2_1_points_clockwise(self):
+        piece = Blockies.Piece('rectangle', 2, 1, (2, 4), const.WHITE)
+        initial_points = [(163, 323), (163, 397), (317, 397), (317, 323)]
+        expected_points = [(163, 323), (163, 477), (237, 477), (237, 323)]
+        self.assertEqual(set(piece.points), set(initial_points))
+        piece.rotate_clockwise()
+        self.assertEqual(set(piece.points), set(expected_points), 'rotated 2x1 rect does not occupy expected squares')
 
     def test_rotate_2_1_rect_counter_clockwise(self):
         piece = Blockies.Piece('rectangle', 2, 1, (2, 4), const.WHITE)

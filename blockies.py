@@ -1,6 +1,6 @@
 import const
-import operator
 import math
+import operator
 import copy
 
 
@@ -112,26 +112,22 @@ class Blockies:
         else:
             return False
 
+    @staticmethod
+    def shift_coord(coord, relative_coordinate):
+        x = coord[0] + relative_coordinate[0]
+        y = coord[1] + relative_coordinate[1]
+        return x, y
+
     class Game:
 
         def __init__(self, num_players):
+
             self.player_index = 0
             self.players = []
             self.players_lt_colors = []
             self.player_pieces_available = []
             self.done = False
             self.final_scores = None
-            self.available_pieces = [
-                Blockies.Piece('T', 3, 3),
-                Blockies.Piece('square', 1, 1),
-                Blockies.Piece('rectangle', 2, 1),
-                Blockies.Piece('square', 2, 2),
-                Blockies.Piece('rectangle', 3, 1),
-                Blockies.Piece('square', 3, 2),
-                Blockies.Piece('rectangle', 4, 1),
-                Blockies.Piece('rectangle', 5, 1),
-                Blockies.Piece('rectangle', 6, 1),
-            ]
             self.num_players = num_players
             if self.num_players == 1:
                 const.SQ_COLUMNS = 7
@@ -142,6 +138,18 @@ class Blockies:
             elif self.num_players == 4:
                 const.SQ_COLUMNS = 14
             const.SQ_SIZE = int(const.SCREEN_SIZE / const.SQ_COLUMNS)
+            self.available_pieces = [
+                Blockies.Piece('square', 1, 1),
+                Blockies.Piece('rectangle', 2, 1),
+                Blockies.Piece('square', 2, 2),
+                Blockies.Piece('rectangle', 3, 1),
+                Blockies.Piece('rectangle', 4, 1),
+                Blockies.Piece('rectangle', 5, 1),
+                Blockies.Piece('L', 2, 2),
+                Blockies.Piece('X', 3, 3),
+                Blockies.Piece('T', 3, 3),
+                Blockies.Piece('T', 3, 2),
+            ]
             self.grid = Blockies.Grid()
             self.players = const.PIECE_COLORS[:self.num_players]
             self.players_lt_colors = const.PIECE_LT_COLORS[:self.num_players]
@@ -256,9 +264,16 @@ class Blockies:
                 else:
                     raise ValueError('`root_square` parameter must be coordinate (tuple or list)')
             elif self.shape == "T":
-                self.matrix = [['*'], ['*', '*', '*'], ['*']]
-                self.x_squares = 3
-                self.x_squares = 3
+                if self.y_squares == 2:
+                    self.matrix = [['*', None], ['*', '*'], ['*', None]]
+                elif self.y_squares == 3:
+                    self.matrix = [['*', None, None], ['*', '*', '*'], ['*', None, None]]
+                self.hydrate()
+            elif self.shape == "X":
+                self.matrix = [[None, '*', None], ['*', '*', '*'], [None, '*', None]]
+                self.hydrate()
+            elif self.shape == "L":
+                self.matrix = [['*', '*'], [None, '*']]
                 self.hydrate()
             else:
                 raise ValueError('Only type `square` is currently supported')
@@ -267,8 +282,20 @@ class Blockies:
             self.color = color
 
         def move_to(self, new_root_square):
+            shift_x = new_root_square[0] - self.root_square[0]
+            shift_y = new_root_square[1] - self.root_square[1]
             self.root_square = new_root_square
-            self.hydrate()
+            new_squares = []
+            for square in self.squares:
+                new_squares.append((square[0] + shift_x, square[1] + shift_y))
+            self.squares = new_squares
+            new_points = []
+            for point in self.points:
+                new_points.append(
+                    (point[0] + (shift_x * const.SQ_SIZE),
+                     point[1] + (shift_y * const.SQ_SIZE)))
+            self.points = new_points
+            self.corner_squares = self._get_corners()
             self.rotation_square = self._get_rotation_square()
 
         def hydrate(self):
@@ -307,26 +334,10 @@ class Blockies:
         def _populate_points(self):
             if self.shape == 'T':
                 self._populate_t_points()
-                # Upright T only
-                # top_left, bottom_left, bottom_right, top_right = self._get_rect_points()
-                # left_x = top_left[0]
-                # bottom_y = bottom_left[1]
-                # right_x = top_right[0]
-                # p2_y = top_left[1] + const.SQ_SIZE - const.SQ_PADDING
-                # p3_x = left_x + const.SQ_SIZE
-                # p5_x = left_x + (2 * const.SQ_SIZE) - const.SQ_PADDING
-                # p4_y = top_left[1] + (3 * const.SQ_SIZE) - const.SQ_PADDING
-                # self.points = [
-                #     top_left,
-                #     (top_left[0], p2_y),
-                #     (p3_x, p2_y),
-                #     (p3_x ,bottom_y),
-                #     (p5_x, bottom_y),
-                #     (p5_x, p2_y),
-                #     (right_x, p2_y),
-                #     top_right
-                # ]
-
+            elif self.shape == 'X':
+                self._populate_x_points()
+            elif self.shape == 'L':
+                self._populate_l_points()
             elif self.is_rectangle():
                 self.points = self._get_rect_points()
 
@@ -369,6 +380,74 @@ class Blockies:
         #     else:
         #         return next_square
 
+        def _populate_x_points(self):
+            p1 = (
+                int(((self.root_square[0] + 1) * const.SQ_SIZE) + const.SQ_PADDING),
+                int((self.root_square[1] * const.SQ_SIZE) + const.SQ_PADDING),
+            )
+            p2 = (
+                int((self.root_square[0] * const.SQ_SIZE) + (1 * const.SQ_SIZE) + const.SQ_PADDING),
+                int((self.root_square[1] * const.SQ_SIZE) + (1 * const.SQ_SIZE) + const.SQ_PADDING),
+            )
+            p3 = (
+                int((self.root_square[0] * const.SQ_SIZE) + const.SQ_PADDING),
+                int((self.root_square[1] * const.SQ_SIZE) + (1 * const.SQ_SIZE) + const.SQ_PADDING),
+            )
+            p4 = (
+                int((self.root_square[0] * const.SQ_SIZE) + const.SQ_PADDING),
+                int((self.root_square[1] * const.SQ_SIZE) + (2 * const.SQ_SIZE)),
+            )
+            p5 = (
+                int((self.root_square[0] * const.SQ_SIZE) + (1 * const.SQ_SIZE) + const.SQ_PADDING),
+                int((self.root_square[1] * const.SQ_SIZE) + (2 * const.SQ_SIZE)),
+            )
+            p6 = (
+                int((self.root_square[0] * const.SQ_SIZE) + (1 * const.SQ_SIZE) + const.SQ_PADDING),
+                int((self.root_square[1] * const.SQ_SIZE) + (3 * const.SQ_SIZE) - const.SQ_PADDING),
+            )
+            p7 = (
+                int((self.root_square[0] * const.SQ_SIZE) + (2 * const.SQ_SIZE) - const.SQ_PADDING),
+                int((self.root_square[1] * const.SQ_SIZE) + (3 * const.SQ_SIZE) - const.SQ_PADDING),
+            )
+            p8 = (
+                int((self.root_square[0] * const.SQ_SIZE) + (2 * const.SQ_SIZE) - const.SQ_PADDING),
+                int((self.root_square[1] * const.SQ_SIZE) + (2 * const.SQ_SIZE) - const.SQ_PADDING),
+            )
+            p9 = (
+                int((self.root_square[0] * const.SQ_SIZE) + (3 * const.SQ_SIZE) - const.SQ_PADDING),
+                int((self.root_square[1] * const.SQ_SIZE) + (2 * const.SQ_SIZE) - const.SQ_PADDING),
+            )
+            p10 = (
+                int((self.root_square[0] * const.SQ_SIZE) + (3 * const.SQ_SIZE) - const.SQ_PADDING),
+                int((self.root_square[1] * const.SQ_SIZE) + (1 * const.SQ_SIZE) + const.SQ_PADDING),
+            )
+            p11 = (
+                int((self.root_square[0] * const.SQ_SIZE) + (2 * const.SQ_SIZE) - const.SQ_PADDING),
+                int((self.root_square[1] * const.SQ_SIZE) + (1 * const.SQ_SIZE) + const.SQ_PADDING),
+            )
+            p12 = (
+                int((self.root_square[0] * const.SQ_SIZE) + (2 * const.SQ_SIZE) - const.SQ_PADDING),
+                int((self.root_square[1] * const.SQ_SIZE) + const.SQ_PADDING),
+            )
+            self.points = [p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12]
+
+        def _populate_l_points(self):
+            p1 = (
+                int((self.root_square[0] * const.SQ_SIZE) + const.SQ_PADDING),
+                int((self.root_square[1] * const.SQ_SIZE) + const.SQ_PADDING),
+            )
+            p2 = Blockies.shift_coord(p1, (0, (2 * const.SQ_SIZE) - const.SQ_PADDING * 2))
+
+            p3 = Blockies.shift_coord(p2, ((2 * const.SQ_SIZE) - const.SQ_PADDING * 2, 0))
+
+            p4 = Blockies.shift_coord(p3, (0, (-1 * const.SQ_SIZE) + const.SQ_PADDING * 2))
+
+            p5 = Blockies.shift_coord(p4, ((-1 * const.SQ_SIZE), 0))
+
+            p6 = Blockies.shift_coord(p5, (0, (-1 * const.SQ_SIZE)))
+
+            self.points = [p1, p2, p3, p4, p5, p6]
+
         def _populate_t_points(self):
             p1 = (
                 int((self.root_square[0] * const.SQ_SIZE) + const.SQ_PADDING),
@@ -382,14 +461,25 @@ class Blockies:
                 int(((self.root_square[0] + 1) * const.SQ_SIZE) + const.SQ_PADDING),
                 int((self.root_square[1] * const.SQ_SIZE) + (1 * const.SQ_SIZE) - const.SQ_PADDING),
             )
-            p4 = (
-                int(((self.root_square[0] + 1) * const.SQ_SIZE) + const.SQ_PADDING),
-                int(((self.root_square[1] + 2) * const.SQ_SIZE) + (1 * const.SQ_SIZE) - const.SQ_PADDING),
-            )
-            p5 = (
-                int(((self.root_square[0] + 2) * const.SQ_SIZE) - const.SQ_PADDING),
-                int(((self.root_square[1] + 2) * const.SQ_SIZE) + (1 * const.SQ_SIZE) - const.SQ_PADDING),
-            )
+            if self.y_squares == 3:
+                p4 = (
+                    int(((self.root_square[0] + 1) * const.SQ_SIZE) + const.SQ_PADDING),
+                    int(((self.root_square[1] + 2) * const.SQ_SIZE) + (1 * const.SQ_SIZE) - const.SQ_PADDING),
+                )
+                p5 = (
+                    int(((self.root_square[0] + 2) * const.SQ_SIZE) - const.SQ_PADDING),
+                    int(((self.root_square[1] + 2) * const.SQ_SIZE) + (1 * const.SQ_SIZE) - const.SQ_PADDING),
+                )
+            elif self.y_squares == 2:
+                p4 = (
+                    int(((self.root_square[0] + 1) * const.SQ_SIZE) + const.SQ_PADDING),
+                    int(((self.root_square[1] + 1) * const.SQ_SIZE) + (1 * const.SQ_SIZE) - const.SQ_PADDING),
+                )
+                p5 = (
+                    int(((self.root_square[0] + 2) * const.SQ_SIZE) - const.SQ_PADDING),
+                    int(((self.root_square[1] + 1) * const.SQ_SIZE) + (1 * const.SQ_SIZE) - const.SQ_PADDING),
+                )
+
             p6 = (
                 int(((self.root_square[0] + 2) * const.SQ_SIZE) - const.SQ_PADDING),
                 int(((self.root_square[1]) * const.SQ_SIZE) + (1 * const.SQ_SIZE) - const.SQ_PADDING),

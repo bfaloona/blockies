@@ -17,6 +17,7 @@ pygame.display.set_caption("Blockies!!!")
 clock = pygame.time.Clock()
 huge_font = pygame.font.Font('agencyb.ttf', 128)
 small_font = pygame.font.Font('agencyb.ttf', 48)
+tiny_font = pygame.font.Font(None, 16)
 winner_font = pygame.font.Font('agencyb.ttf', 84)
 score_font = pygame.font.Font('agencyb.ttf', 72)
 
@@ -86,6 +87,13 @@ def turn_swap():
     game.active_piece = game.player_pieces_available[game.player_index][game.active_piece_index]
     return True
 
+
+def blit_at(coords, text=None):
+    if not text:
+        text = str(coords)
+    message = tiny_font.render(text, True, (20, 20, 20))
+    screen.blit(message, (coords[0] + 6, coords[1] + 6))
+
 print('Started Blockies!')
 
 # VARIABLES
@@ -150,10 +158,10 @@ while not game.done:
             quit(0)
         elif event.type == pygame.KEYDOWN:
             if pygame.key.get_pressed()[pygame.K_UP]:
-                game.active_piece = game.grid.next_available_piece()
+                game.active_piece = game.next_available_piece()
                 game.active_piece.move_to(Blockies.square_from_pos(pygame.mouse.get_pos()))
             elif pygame.key.get_pressed()[pygame.K_DOWN]:
-                game.active_piece = game.grid.previous_available_piece()
+                game.active_piece = game.previous_available_piece()
                 game.active_piece.move_to(Blockies.square_from_pos(pygame.mouse.get_pos()))
             elif pygame.key.get_pressed()[pygame.K_RIGHT]:
                 game.active_piece.rotate_clockwise()
@@ -203,6 +211,7 @@ while not game.done:
     if not game.final_scores:
         if mouse_is_on_screen() and not Blockies.mouse_in_square(pygame.mouse.get_pos(), new_square):
             draw_piece(game.active_piece)
+            blit_at(Blockies.pos_from_square(game.active_piece.root_square))
     else:
         overlay = pygame.Surface((const.SCREEN_SIZE, const.SCREEN_SIZE))  # the size of your rect
         overlay.set_alpha(188)              # alpha level
